@@ -1,0 +1,266 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Badge from "@/components/ui/Badge.astro";
+import MobileTOC from "@/components/posts/MobileTOC.astro";
+import DesktopTOC from "@/components/posts/DesktopTOC.astro";
+import { Image } from "astro:assets";
+
+export async function getStaticPaths() {
+    const posts = await getCollection("post");
+    return posts.map((post) => ({
+        params: { slug: post.id },
+        props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+
+const readTime = Math.max(1, Math.ceil(post.body!.split(/\s+/).length / 200));
+
+// date is assuming to be MM/DD/YYYY
+const dateParts = post.data.date.split("/");
+const dateObj = new Date(
+    Date.UTC(
+        Number(dateParts[2]),
+        Number(dateParts[0]) - 1,
+        Number(dateParts[1]),
+    ),
+);
+
+const dateFormatted = dateObj.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+});
+
+const isoDate = dateObj.toISOString();
+
+const ogImage = post.data.image?.src;
+---
+
+<Layout
+    title={`${post.data.title} | Serene Ink`}
+    description={post.data.frontmatter}
+    type="article"
+    image={ogImage}
+>
+    <div class="fixed top-0 left-0 w-full z-50 bg-transparent">
+        <div
+            id="progress-bar"
+            class="h-0.75 bg-primary transition-all duration-150 ease-out"
+            style="width: 0%"
+        >
+        </div>
+    </div>
+    <main class="page pb-20 mt-10 relative">
+        <div class="mb-10 w-full">
+            <a
+                href="/"
+                class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+            >
+                <span>←</span> Back to writing
+            </a>
+        </div>
+
+        <article class="w-full max-w-full">
+            <header class="mb-14 lg:mb-20">
+                <h1
+                    class="text-4xl md:text-5xl lg:text-5xl font-bold tracking-tight mb-6 text-foreground leading-tight"
+                >
+                    {post.data.title}
+                </h1>
+                <div
+                    class="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap"
+                >
+                    <time datetime={isoDate}>{dateFormatted}</time>
+                    <span>·</span>
+                    <span>{readTime} min read</span>
+                    <span>·</span>
+                    <div class="flex gap-2 flex-wrap">
+                        {
+                            post.data.tags.map((tag: string) => (
+                                <Badge content={tag} />
+                            ))
+                        }
+                    </div>
+                </div>
+                {
+                    post.data.image && (
+                        <Image
+                            src={post.data.image}
+                            alt={post.data.title}
+                            class="w-full h-auto rounded-xl mt-8 object-cover aspect-video border border-border"
+                        />
+                    )
+                }
+            </header>
+        </article>
+
+        <div class="flex flex-col lg:flex-row gap-10 relative">
+            <div class="flex-1 w-full max-w-full">
+                <div class="prose-blog">
+                    <div class="drop-cap">
+                        <Content />
+                    </div>
+                </div>
+            </div>
+
+            {headings.length > 0 && <DesktopTOC headings={headings} />}
+        </div>
+
+        <div class="mt-20 pt-10 border-t border-border flex justify-start">
+            <a
+                href="/"
+                class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+            >
+                <span>←</span> Back to writing
+            </a>
+        </div>
+    </main>
+
+    {headings.length > 0 && <MobileTOC headings={headings} />}
+    <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.data.title,
+            image: ogImage
+                ? new URL(ogImage, Astro.site || Astro.url.origin).href
+                : undefined,
+            author: {
+                "@type": "Person",
+                name: "Jiseeeh",
+            },
+            datePublished: isoDate,
+            description: post.data.frontmatter,
+            url: Astro.site
+                ? new URL(Astro.url.pathname, Astro.site).href
+                : Astro.url.href,
+        })}
+    />
+
+    <script is:inline>
+        let onScroll = null;
+        let observer = null;
+
+        document.addEventListener(
+            "astro:before-swap",
+            () => {
+                if (onScroll) {
+                    window.removeEventListener("scroll", onScroll);
+                    onScroll = null;
+                }
+                if (observer) {
+                    observer.disconnect();
+                    observer = null;
+                }
+            },
+            { once: true },
+        );
+
+        document.addEventListener("astro:page-load", () => {
+            onScroll = () => {
+                const winScroll =
+                    document.body.scrollTop ||
+                    document.documentElement.scrollTop;
+                const height =
+                    document.documentElement.scrollHeight -
+                    document.documentElement.clientHeight;
+                const scrolled = height <= 0 ? 100 : (winScroll / height) * 100;
+                const progressBar = document.getElementById("progress-bar");
+                if (progressBar) {
+                    progressBar.style.width = scrolled + "%";
+                }
+            };
+
+            window.addEventListener("scroll", onScroll);
+
+            const activeLiClasses = [
+                "border-l-2",
+                "border-primary",
+                "-ml-[1px]",
+            ];
+            const activeLinkClasses = ["text-foreground", "font-medium"];
+
+            const activeHeadings = new Set();
+
+            observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        const id = entry.target.getAttribute("id");
+                        if (entry.isIntersecting) {
+                            activeHeadings.add(id);
+                        } else {
+                            activeHeadings.delete(id);
+                        }
+                    });
+
+                    const headers = Array.from(
+                        document.querySelectorAll("h2, h3, h4"),
+                    );
+                    const firstActive = headers.find((h) =>
+                        activeHeadings.has(h.getAttribute("id")),
+                    );
+
+                    if (firstActive) {
+                        const id = firstActive.getAttribute("id");
+                        const desktopLink = document.querySelector(
+                            `aside a[href="#${id}"]`,
+                        );
+                        const mobileLink = document.querySelector(
+                            `#mobile-toc-menu a[href="#${id}"]`,
+                        );
+
+                        document.querySelectorAll("aside li").forEach((el) => {
+                            el.classList.remove(...activeLiClasses);
+                            const a = el.querySelector("a");
+                            if (a) {
+                                a.classList.remove(...activeLinkClasses);
+                                a.classList.add("text-muted-foreground");
+                            }
+                        });
+
+                        document
+                            .querySelectorAll("#mobile-toc-menu li")
+                            .forEach((el) => {
+                                el.classList.remove(...activeLiClasses);
+                                const a = el.querySelector("a");
+                                if (a) {
+                                    a.classList.remove(...activeLinkClasses);
+                                    a.classList.add("text-muted-foreground");
+                                }
+                            });
+
+                        if (desktopLink) {
+                            const asideLi = desktopLink.parentElement;
+                            asideLi.classList.add(...activeLiClasses);
+                            desktopLink.classList.add(...activeLinkClasses);
+                            desktopLink.classList.remove(
+                                "text-muted-foreground",
+                            );
+                        }
+
+                        if (mobileLink) {
+                            const mobileLi = mobileLink.parentElement;
+                            mobileLi.classList.add(...activeLiClasses);
+                            mobileLink.classList.add(...activeLinkClasses);
+                            mobileLink.classList.remove(
+                                "text-muted-foreground",
+                            );
+                        }
+                    }
+                },
+                { rootMargin: "0px 0px -80% 0px" },
+            );
+
+            document.querySelectorAll("h2, h3, h4").forEach((header) => {
+                observer.observe(header);
+            });
+        });
+    </script>
+</Layout>
