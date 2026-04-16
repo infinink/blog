@@ -1,0 +1,79 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+
+const entries = await getCollection("post");
+
+const latestPosts = entries
+    .map((entry) => ({
+        slug: entry.id,
+        title: entry.data.title,
+        frontmatter: entry.data.frontmatter,
+        date: entry.data.date,
+    }))
+    .sort((a, b) => {
+        const [am, ad, ay] = a.date.split("/").map(Number);
+        const [bm, bd, by] = b.date.split("/").map(Number);
+
+        return (
+            new Date(by, bm - 1, bd).getTime() -
+            new Date(ay, am - 1, ad).getTime()
+        );
+    })
+    .slice(0, 3);
+---
+
+<Layout
+    title="404 | Serene Ink"
+    description="The page you requested could not be found."
+>
+    <main class="page min-h-[65vh] flex flex-col justify-center gap-10 pb-12">
+        <section class="space-y-4 max-w-2xl">
+            <span class="uppercase text-primary font-medium tracking-widest text-xs"
+                >error</span
+            >
+            <h1 class="text-5xl md:text-6xl leading-none">404</h1>
+            <p class="text-lg text-muted-foreground">
+                Looks like this page wandered off the map. You can head back home,
+                check the latest writing, or open the about page.
+            </p>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <a
+                    href="/"
+                    class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                    Back to home
+                </a>
+                <a
+                    href="/about"
+                    class="px-4 py-2 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                    Go to about
+                </a>
+            </div>
+        </section>
+
+        {
+            latestPosts.length > 0 && (
+                <section class="space-y-4">
+                    <h2 class="text-2xl">Try one of these posts</h2>
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {latestPosts.map((post) => (
+                            <a
+                                href={`/posts/${post.slug}`}
+                                class="border border-border rounded-lg p-4 bg-card/30 hover:bg-muted/70 transition-colors space-y-2"
+                            >
+                                <h3 class="text-lg leading-snug hover:text-primary transition-colors">
+                                    {post.title}
+                                </h3>
+                                <p class="text-sm text-muted-foreground">
+                                    {post.frontmatter}
+                                </p>
+                            </a>
+                        ))}
+                    </section>
+                </section>
+            )
+        }
+    </main>
+</Layout>

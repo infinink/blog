@@ -1,8 +1,131 @@
 ---
-import Writing from "@/components/Writing.astro";
+import { getCollection } from "astro:content";
+import Badge from "@/components/ui/Badge.astro";
 import Layout from "@/layouts/Layout.astro";
+
+const entries = await getCollection("post");
+
+const posts = entries
+    .map((entry) => ({
+        id: entry.id,
+        slug: entry.id,
+        readTime: Math.max(1, Math.ceil(entry.body!.split(/\s+/).length / 200)),
+        ...entry.data,
+    }))
+    .sort((a, b) => {
+        const [am, ad, ay] = a.date.split("/").map(Number);
+        const [bm, bd, by] = b.date.split("/").map(Number);
+
+        return (
+            new Date(by, bm - 1, bd).getTime() -
+            new Date(ay, am - 1, ad).getTime()
+        );
+    });
+
+const latestPosts = posts.slice(0, 4);
+const uniqueTags = new Set(posts.flatMap((post) => post.tags));
+const thisYear = new Date().getFullYear();
+const publishedThisYear = posts.filter(
+    (post) => Number(post.date.split("/")[2]) === thisYear,
+).length;
 ---
 
-<Layout image="/images/home.webp">
-    <Writing />
+<Layout
+    title="Home | Serene Ink"
+    description="A quiet corner on systems, craft, and the details that make software age well."
+    image="/images/home.webp"
+>
+    <main class="page flex flex-col gap-12 pb-16">
+        <section class="space-y-5 max-w-3xl">
+            <span class="uppercase text-primary font-medium tracking-widest text-xs"
+                >serene ink</span
+            >
+            <h1 class="text-4xl md:text-5xl leading-tight">Home</h1>
+            <p class="text-lg text-muted-foreground max-w-2xl">
+                Notes from someone still figuring things out — shipped anyway.
+                Mostly about backend thinking, software design, and the craft of
+                writing code that stays readable.
+            </p>
+            <section class="flex flex-wrap items-center gap-3 pt-2">
+                <a
+                    href="/about"
+                    class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                    Read about me
+                </a>
+                <a
+                    href="/feed.xml"
+                    class="px-4 py-2 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                    Subscribe via RSS
+                </a>
+            </section>
+        </section>
+
+        <section
+            class="grid grid-cols-1 sm:grid-cols-3 border border-border divide-y sm:divide-y-0 sm:divide-x divide-border rounded-lg overflow-hidden"
+        >
+            <article class="p-5 bg-card/50">
+                <p class="text-xs uppercase tracking-widest text-muted-foreground">
+                    total posts
+                </p>
+                <p class="text-3xl mt-2 font-semibold">{posts.length}</p>
+            </article>
+            <article class="p-5 bg-card/50">
+                <p class="text-xs uppercase tracking-widest text-muted-foreground">
+                    tags explored
+                </p>
+                <p class="text-3xl mt-2 font-semibold">{uniqueTags.size}</p>
+            </article>
+            <article class="p-5 bg-card/50">
+                <p class="text-xs uppercase tracking-widest text-muted-foreground">
+                    published in {thisYear}
+                </p>
+                <p class="text-3xl mt-2 font-semibold">{publishedThisYear}</p>
+            </article>
+        </section>
+
+        <section class="space-y-5">
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <span class="uppercase text-primary font-medium tracking-widest text-xs"
+                        >latest writing</span
+                    >
+                    <h2 class="text-3xl mt-2">Recent Posts</h2>
+                </div>
+            </div>
+
+            {
+                latestPosts.length > 0 ? (
+                    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {latestPosts.map((post) => (
+                            <article class="border border-border rounded-lg p-5 bg-card/30 hover:bg-muted/70 transition-colors duration-300 flex flex-col gap-4">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                        <span>{post.date}</span>
+                                        <span>{post.readTime} min read</span>
+                                    </div>
+                                    <a href={`/posts/${post.slug}`}>
+                                        <h3 class="text-2xl leading-tight hover:text-primary transition-colors">
+                                            {post.title}
+                                        </h3>
+                                    </a>
+                                    <p class="text-muted-foreground">
+                                        {post.frontmatter}
+                                    </p>
+                                </div>
+                                <div class="flex flex-wrap gap-2 pt-1">
+                                    {post.tags.map((tag) => <Badge content={tag} />)}
+                                </div>
+                            </article>
+                        ))}
+                    </section>
+                ) : (
+                    <section class="border border-dashed border-border rounded-lg p-8 text-muted-foreground">
+                        No posts yet. Your first entry will appear here.
+                    </section>
+                )
+            }
+        </section>
+    </main>
 </Layout>

@@ -103,7 +103,7 @@ const isOnCurrentPath = (path: string) => {
             document.addEventListener("astro:after-swap", setDarkMode);
         </script>
     </head>
-    <body class="max-w-page mx-auto">
+    <body class="max-w-page mx-auto min-h-screen flex flex-col">
         <nav class="px-5 py-5 flex justify-between">
             <Braces />
 
@@ -111,7 +111,20 @@ const isOnCurrentPath = (path: string) => {
                 <li>
                     <a href="/" class={isOnCurrentPath("/") ? "active" : ""}
                         ><span class={isOnCurrentPath("/") ? "" : "nav-link"}
-                            >Writing</span
+                            >Home</span
+                        ></a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="/writing"
+                        class={isOnCurrentPath("/writing") ? "active" : ""}
+                        ><span
+                            class={
+                                isOnCurrentPath("/writing")
+                                    ? ""
+                                    : "nav-link"
+                            }>Writing</span
                         ></a
                     >
                 </li>
@@ -157,7 +170,44 @@ const isOnCurrentPath = (path: string) => {
                 </li>
             </ul>
         </nav>
-        <slot />
+        <div class="flex-1">
+            <slot />
+        </div>
+        <footer class="px-5 py-8 mt-10 border-t border-border">
+            <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-muted-foreground"
+            >
+                <p>© {new Date().getFullYear()} Serene Ink. Built with care.</p>
+                <ul class="flex items-center gap-4">
+                    <li>
+                        <a href="/" class="hover:text-primary transition-colors"
+                            >Home</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="/writing"
+                            class="hover:text-primary transition-colors"
+                            >Writing</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="/about"
+                            class="hover:text-primary transition-colors"
+                            >About</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="/feed.xml"
+                            class="hover:text-primary transition-colors"
+                            >RSS</a
+                        >
+                    </li>
+                </ul>
+            </div>
+        </footer>
         <div
             id="search-overlay"
             class="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 flex items-start justify-center pt-20 sm:pt-32 px-4 disable-select"
