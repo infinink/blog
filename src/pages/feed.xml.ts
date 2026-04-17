@@ -12,7 +12,7 @@ export async function GET(context: APIContext) {
   const entries = await getCollection('post');
 
   return rss({
-    title: "Jiseeeh's Blog",
+    title: "infinInk Blog",
     description: 'Notes from someone still figuring it out — shipped anyway.',
     site: context.url.origin,
     items: entries.map((entry) => ({
@@ -21,6 +21,7 @@ export async function GET(context: APIContext) {
       description: entry.data.frontmatter,
       link: `/posts/${entry.id}`,
     })),
+    stylesheet: '/rss/feed.xsl',
     customData: `<language>en-us</language>`,
   });
 }
