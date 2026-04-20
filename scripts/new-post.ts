@@ -42,6 +42,7 @@ title: "${title}"
 date: "${formattedDate}"
 frontmatter: "Write a short summary here..."
 tags: ["general"]
+pinned: false
 image: ""
 ---
 

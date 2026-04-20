@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Badge from "./ui/Badge.astro";
+import { comparePostsByPinnedAndDate } from "@/utils/posts";
 import { slugifyTag } from "@/utils/tags";
 
 const entries = await getCollection("post");
@@ -11,9 +12,12 @@ const posts = entries
         readTime: Math.max(1, Math.ceil(entry.body!.split(/\s+/).length / 200)),
         ...entry.data,
     }))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort(comparePostsByPinnedAndDate);
 
 type MappedPost = (typeof posts)[number];
+
+const pinnedPosts = posts.filter((post) => post.pinned);
+const timelinePosts = posts.filter((post) => !post.pinned);
 
 const monthName = (n: number) =>
     new Date(2000, n - 1).toLocaleString("en", { month: "short" });
@@ -25,7 +29,7 @@ const dateRange = (posts: MappedPost[]) => {
         : `${Math.min(...days)} - ${Math.max(...days)}`;
 };
 
-const grouped = posts.reduce(
+const grouped = timelinePosts.reduce(
     (acc, post) => {
         const [m, , y] = post.date.split("/");
         const month = monthName(Number(m));
@@ -49,54 +53,97 @@ const grouped = posts.reduce(
         well.
     </p>
 
+    {
+        pinnedPosts.length > 0 && (
+            <section class="mt-12 space-y-3">
+                <h2 class="text-2xl">Pinned</h2>
+                <section class="flex flex-col gap-3 my-5">
+                    {pinnedPosts.map((post) => {
+                        return (
+                            <section class="flex flex-col gap-2 group hover:bg-muted px-3 py-8 rounded-md transition-all duration-300 border border-border/50 bg-card/20">
+                                <div class="flex flex-col md:flex-row gap-2 md:justify-between md:items-start">
+                                    <a href={`/posts/${post.slug}`}>
+                                        <h2 class="text-2xl group-hover:text-primary leading-tight">
+                                            {post.title}
+                                        </h2>
+                                    </a>
+                                    <span class="text-muted-foreground text-xs shrink-0 whitespace-nowrap md:mt-1 md:text-right text-left mt-1">
+                                        {post.readTime} min read
+                                    </span>
+                                </div>
+                                <p class="text-muted-foreground">{post.frontmatter}</p>
+                                <section class="flex gap-2 flex-wrap">
+                                    {post.tags.map((tag) => {
+                                        return (
+                                            <Badge
+                                                content={tag}
+                                                href={`/tags/${slugifyTag(tag)}`}
+                                            />
+                                        );
+                                    })}
+                                </section>
+                            </section>
+                        );
+                    })}
+                </section>
+            </section>
+        )
+    }
+
     <section class="mt-20 my-5">
         {
-            Object.keys(grouped)
-                .sort((a, b) => Number(b) - Number(a))
-                .map((year) => (
-                <section>
-                    <h2 class="text-2xl">{year}</h2>
-                    {Object.entries(grouped[year]).map(([month, posts]) => (
+            Object.keys(grouped).length > 0 ? (
+                Object.keys(grouped)
+                    .sort((a, b) => Number(b) - Number(a))
+                    .map((year) => (
                         <section>
-                            <h3 class="text-sm text-muted-foreground uppercase font-medium tracking-widest">
-                                {month} {dateRange(posts)}
-                            </h3>
-                            <hr class="mt-2" />
-                            <section class="flex flex-col gap-3 my-5">
-                                {posts.map((post) => {
-                                    return (
-                                        <section class="flex flex-col gap-2 group hover:bg-muted px-3 py-8 rounded-md transition-all duration-300">
-                                            <div class="flex flex-col md:flex-row gap-2 md:justify-between md:items-start">
-                                                <a href={`/posts/${post.slug}`}>
-                                                    <h2 class="text-2xl group-hover:text-primary leading-tight">
-                                                        {post.title}
-                                                    </h2>
-                                                </a>
-                                                <span class="text-muted-foreground text-xs shrink-0 whitespace-nowrap md:mt-1 md:text-right text-left mt-1">
-                                                    {post.readTime} min read
-                                                </span>
-                                            </div>
-                                            <p class="text-muted-foreground">
-                                                {post.frontmatter}
-                                            </p>
-                                            <section class="flex gap-2 flex-wrap">
-                                                {post.tags.map((tag) => {
-                                                    return (
-                                                        <Badge
-                                                            content={tag}
-                                                            href={`/tags/${slugifyTag(tag)}`}
-                                                        />
-                                                    );
-                                                })}
-                                            </section>
-                                        </section>
-                                    );
-                                })}
-                            </section>
+                            <h2 class="text-2xl">{year}</h2>
+                            {Object.entries(grouped[year]).map(([month, posts]) => (
+                                <section>
+                                    <h3 class="text-sm text-muted-foreground uppercase font-medium tracking-widest">
+                                        {month} {dateRange(posts)}
+                                    </h3>
+                                    <hr class="mt-2" />
+                                    <section class="flex flex-col gap-3 my-5">
+                                        {posts.map((post) => {
+                                            return (
+                                                <section class="flex flex-col gap-2 group hover:bg-muted px-3 py-8 rounded-md transition-all duration-300">
+                                                    <div class="flex flex-col md:flex-row gap-2 md:justify-between md:items-start">
+                                                        <a href={`/posts/${post.slug}`}>
+                                                            <h2 class="text-2xl group-hover:text-primary leading-tight">
+                                                                {post.title}
+                                                            </h2>
+                                                        </a>
+                                                        <span class="text-muted-foreground text-xs shrink-0 whitespace-nowrap md:mt-1 md:text-right text-left mt-1">
+                                                            {post.readTime} min read
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-muted-foreground">
+                                                        {post.frontmatter}
+                                                    </p>
+                                                    <section class="flex gap-2 flex-wrap">
+                                                        {post.tags.map((tag) => {
+                                                            return (
+                                                                <Badge
+                                                                    content={tag}
+                                                                    href={`/tags/${slugifyTag(tag)}`}
+                                                                />
+                                                            );
+                                                        })}
+                                                    </section>
+                                                </section>
+                                            );
+                                        })}
+                                    </section>
+                                </section>
+                            ))}
                         </section>
-                    ))}
+                    ))
+            ) : (
+                <section class="border border-dashed border-border rounded-lg p-8 text-muted-foreground">
+                    No timeline posts yet.
                 </section>
-            ))
+            )
         }
     </section>
 </main>

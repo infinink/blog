@@ -62,11 +62,14 @@ title: "Your Awesome Catchy Title"
 date: "03/12/2024"
 frontmatter: "A short description or summary of your post."
 tags: ["astro", "learning", "random"]
+pinned: false
 image: ""
 ---
 
 Your content goes here...
 ```
+
+Set `pinned: true` to keep an article at the top of post listings.
 
 ## 🌐 Deployment
 

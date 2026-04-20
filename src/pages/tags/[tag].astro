@@ -2,12 +2,8 @@
 import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Badge from "@/components/ui/Badge.astro";
+import { comparePostsByPinnedAndDate } from "@/utils/posts";
 import { normalizeTag, slugifyTag } from "@/utils/tags";
-
-const parseDate = (dateStr: string) => {
-    const [m, d, y] = dateStr.split("/").map(Number);
-    return new Date(y, m - 1, d);
-};
 
 export async function getStaticPaths() {
     const entries = await getCollection("post");
@@ -45,7 +41,10 @@ const posts = entries
         readTime: Math.max(1, Math.ceil(entry.body!.split(/\s+/).length / 200)),
         ...entry.data,
     }))
-    .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
+    .sort(comparePostsByPinnedAndDate);
+
+const pinnedPosts = posts.filter((post) => post.pinned);
+const regularPosts = posts.filter((post) => !post.pinned);
 ---
 
 <Layout
@@ -68,9 +67,45 @@ const posts = entries
         </section>
 
         {
-            posts.length > 0 ? (
-                <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {posts.map((post) => (
+            pinnedPosts.length > 0 && (
+                <section class="space-y-4">
+                    <h2 class="text-2xl">Pinned</h2>
+                    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pinnedPosts.map((post) => (
+                            <article class="border border-border rounded-lg p-5 bg-card/30 hover:bg-muted/70 transition-colors duration-300 flex flex-col gap-4">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                        <span>{post.date}</span>
+                                        <span>{post.readTime} min read</span>
+                                    </div>
+                                    <a href={`/posts/${post.slug}`}>
+                                        <h2 class="text-2xl leading-tight hover:text-primary transition-colors">
+                                            {post.title}
+                                        </h2>
+                                    </a>
+                                    <p class="text-muted-foreground">{post.frontmatter}</p>
+                                </div>
+                                <div class="flex flex-wrap gap-2 pt-1">
+                                    {post.tags.map((tag) => (
+                                        <Badge
+                                            content={tag}
+                                            href={`/tags/${slugifyTag(tag)}`}
+                                        />
+                                    ))}
+                                </div>
+                            </article>
+                        ))}
+                    </section>
+                </section>
+            )
+        }
+
+        {
+            regularPosts.length > 0 ? (
+                <section class="space-y-4">
+                    {pinnedPosts.length > 0 && <h2 class="text-2xl">Timeline</h2>}
+                    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {regularPosts.map((post) => (
                         <article class="border border-border rounded-lg p-5 bg-card/30 hover:bg-muted/70 transition-colors duration-300 flex flex-col gap-4">
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -93,7 +128,12 @@ const posts = entries
                                 ))}
                             </div>
                         </article>
-                    ))}
+                        ))}
+                    </section>
+                </section>
+            ) : posts.length > 0 ? (
+                <section class="border border-dashed border-border rounded-lg p-8 text-muted-foreground">
+                    No timeline posts for this tag yet.
                 </section>
             ) : (
                 <section class="border border-dashed border-border rounded-lg p-8 text-muted-foreground">

@@ -9,6 +9,7 @@ const post = defineCollection({
     date: z.string(),
     frontmatter: z.string(),
     tags: z.array(z.string()),
+    pinned: z.boolean().default(false),
     image: image().optional(),
   }),
 });

@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
+import { comparePostsByPinnedAndDate } from "@/utils/posts";
 
 const entries = await getCollection("post");
 
@@ -10,16 +11,9 @@ const latestPosts = entries
         title: entry.data.title,
         frontmatter: entry.data.frontmatter,
         date: entry.data.date,
+        pinned: entry.data.pinned,
     }))
-    .sort((a, b) => {
-        const [am, ad, ay] = a.date.split("/").map(Number);
-        const [bm, bd, by] = b.date.split("/").map(Number);
-
-        return (
-            new Date(by, bm - 1, bd).getTime() -
-            new Date(ay, am - 1, ad).getTime()
-        );
-    })
+    .sort(comparePostsByPinnedAndDate)
     .slice(0, 3);
 ---
 

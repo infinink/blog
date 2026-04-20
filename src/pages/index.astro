@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Badge from "@/components/ui/Badge.astro";
 import Layout from "@/layouts/Layout.astro";
+import { comparePostsByPinnedAndDate } from "@/utils/posts";
 import { slugifyTag } from "@/utils/tags";
 
 const entries = await getCollection("post");
@@ -13,17 +14,10 @@ const posts = entries
         readTime: Math.max(1, Math.ceil(entry.body!.split(/\s+/).length / 200)),
         ...entry.data,
     }))
-    .sort((a, b) => {
-        const [am, ad, ay] = a.date.split("/").map(Number);
-        const [bm, bd, by] = b.date.split("/").map(Number);
+    .sort(comparePostsByPinnedAndDate);
 
-        return (
-            new Date(by, bm - 1, bd).getTime() -
-            new Date(ay, am - 1, ad).getTime()
-        );
-    });
-
-const latestPosts = posts.slice(0, 4);
+const pinnedPosts = posts.filter((post) => post.pinned);
+const latestPosts = posts.filter((post) => !post.pinned).slice(0, 4);
 const uniqueTags = new Set(posts.flatMap((post) => post.tags));
 const thisYear = new Date().getFullYear();
 const publishedThisYear = posts.filter(
@@ -85,6 +79,52 @@ const publishedThisYear = posts.filter(
                 <p class="text-3xl mt-2 font-semibold">{publishedThisYear}</p>
             </article>
         </section>
+
+        {
+            pinnedPosts.length > 0 && (
+                <section class="space-y-5">
+                    <div class="flex items-end justify-between gap-4">
+                        <div>
+                            <span class="uppercase text-primary font-medium tracking-widest text-xs"
+                                >featured</span
+                            >
+                            <h2 class="text-3xl mt-2">Pinned Posts</h2>
+                        </div>
+                    </div>
+
+                    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pinnedPosts.map((post) => (
+                            <article class="border border-border rounded-lg p-5 bg-card/30 hover:bg-muted/70 transition-colors duration-300 flex flex-col gap-4">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                        <span>{post.date}</span>
+                                        <span>{post.readTime} min read</span>
+                                    </div>
+                                    <a href={`/posts/${post.slug}`}>
+                                        <h3 class="text-2xl leading-tight hover:text-primary transition-colors">
+                                            {post.title}
+                                        </h3>
+                                    </a>
+                                    <p class="text-muted-foreground">
+                                        {post.frontmatter}
+                                    </p>
+                                </div>
+                                <div class="flex flex-wrap gap-2 pt-1">
+                                    {
+                                        post.tags.map((tag) => (
+                                            <Badge
+                                                content={tag}
+                                                href={`/tags/${slugifyTag(tag)}`}
+                                            />
+                                        ))
+                                    }
+                                </div>
+                            </article>
+                        ))}
+                    </section>
+                </section>
+            )
+        }
 
         <section class="space-y-5">
             <div class="flex items-end justify-between gap-4">
