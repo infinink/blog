@@ -8,6 +8,7 @@ Serene Ink is a minimalist, elegant, and blazing-fast Astro blog template design
 - **Tailwind CSS v4:** Modern styling with seamless customization.
 - **Performance First:** 100/100 Lighthouse scores with minimal shipping JavaScript.
 - **RSS Feed:** Built-in RSS feed generation out of the box.
+- **Advanced SEO:** Rich Open Graph/Twitter tags, canonical/noindex controls, and JSON-LD structured data.
 - **Responsive & Accessible:** Beautifully crafted for both mobile and desktop experiences.
 
 ## 🧞 Setting Up
@@ -42,7 +43,7 @@ To make this template your own, you'll need to update a few files:
    - Add your own `projects`
    - Update the "Currently Playing/Watching/Reading/Listening" in the `ActivityCard` sections
    - Rewrite the hero introductory texts describing yourself
-4. **Structured Data:** Open `src/pages/posts/[slug].astro` and update the author's name in the `<script type="application/ld+json">` block to your own name for better SEO.
+4. **Structured Data:** Open `src/pages/posts/[slug].astro` and update the `author.name` inside `articleSchema` to your own name for better SEO.
 5. **Favicon:** Replace `/public/favicon.svg` and `/public/favicon.ico` with your brand's icon.
 
 ## 📝 Adding New Blogs
@@ -60,9 +61,12 @@ Alternatively, simply create a new `.mdx` file (e.g., `my-new-post.mdx`) and ens
 ---
 title: "Your Awesome Catchy Title"
 date: "03/12/2024"
+updatedDate: "03/20/2024" # optional
 frontmatter: "A short description or summary of your post."
 tags: ["astro", "learning", "random"]
 pinned: false
+canonical: "https://your-domain.com/posts/your-awesome-catchy-title" # optional
+noindex: false # optional
 image: ""
 ---
 

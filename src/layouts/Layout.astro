@@ -8,6 +8,15 @@ interface Props {
     description?: string;
     type?: string;
     image?: string;
+    canonical?: string;
+    noindex?: boolean;
+    keywords?: string[];
+    publishedTime?: string;
+    modifiedTime?: string;
+    author?: string;
+    section?: string;
+    tags?: string[];
+    jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 const {
@@ -15,12 +24,41 @@ const {
     description = "Notes from someone still figuring it out — shipped anyway.",
     type = "website",
     image,
+    canonical,
+    noindex = false,
+    keywords = [],
+    publishedTime,
+    modifiedTime,
+    author = "infinInk",
+    section,
+    tags = [],
+    jsonLd,
 } = Astro.props;
 
-const canonicalURL = new URL(
-    Astro.url.pathname,
-    Astro.site || Astro.url.origin,
-);
+const siteOrigin = Astro.site || new URL(Astro.url.origin);
+const canonicalURL = canonical
+    ? new URL(canonical, siteOrigin)
+    : new URL(Astro.url.pathname, siteOrigin);
+const resolvedImage = image ? new URL(image, siteOrigin).href : undefined;
+const robotsContent = noindex
+    ? "noindex, nofollow"
+    : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
+const metaKeywords = keywords
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ");
+const websiteSchema = {
+    "@type": "WebSite",
+    name: "Serene Ink",
+    url: new URL("/", siteOrigin).href,
+    inLanguage: "en-US",
+};
+const jsonLdBlocks = [websiteSchema, ...(Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [])]
+    .filter(Boolean)
+    .map((schema) => ({
+        "@context": "https://schema.org",
+        ...schema,
+    }));
 
 const normalize = (p: string) => p.replace(/\/+$/, "") || "/";
 
@@ -34,6 +72,9 @@ const isOnCurrentPath = (path: string) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
         <meta name="description" content={description} />
+        <meta name="robots" content={robotsContent} />
+        <meta name="googlebot" content={robotsContent} />
+        {metaKeywords && <meta name="keywords" content={metaKeywords} />}
         <ClientRouter />
         <link rel="sitemap" href="/sitemap-index.xml" />
         <link rel="canonical" href={canonicalURL.href} />
@@ -44,25 +85,25 @@ const isOnCurrentPath = (path: string) => {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalURL.href} />
         <meta property="og:type" content={type} />
+        <meta property="og:site_name" content="Serene Ink" />
+        <meta property="og:locale" content="en_US" />
+        {resolvedImage && <meta property="og:image" content={resolvedImage} />}
+        {resolvedImage && <meta name="twitter:image" content={resolvedImage} />}
         {
-            image && (
-                <meta
-                    property="og:image"
-                    content={
-                        new URL(image, Astro.site || Astro.url.origin).href
-                    }
-                />
+            type === "article" && publishedTime && (
+                <meta property="article:published_time" content={publishedTime} />
             )
         }
         {
-            image && (
-                <meta
-                    name="twitter:image"
-                    content={
-                        new URL(image, Astro.site || Astro.url.origin).href
-                    }
-                />
+            type === "article" && modifiedTime && (
+                <meta property="article:modified_time" content={modifiedTime} />
             )
+        }
+        {type === "article" && <meta property="article:author" content={author} />}
+        {type === "article" && section && <meta property="article:section" content={section} />}
+        {
+            type === "article" &&
+                tags.map((tag) => <meta property="article:tag" content={tag} />)
         }
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
@@ -74,8 +115,16 @@ const isOnCurrentPath = (path: string) => {
             rel="alternate"
             type="application/rss+xml"
             title="Serene Ink"
-            href={new URL("feed.xml", Astro.url.origin)}
+            href={new URL("feed.xml", siteOrigin)}
         />
+        {
+            jsonLdBlocks.map((schema) => (
+                <script
+                    type="application/ld+json"
+                    set:html={JSON.stringify(schema)}
+                />
+            ))
+        }
         <script is:inline>
             const setDarkMode = () => {
                 const theme = (() => {

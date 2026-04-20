@@ -1,8 +1,43 @@
 ---
 import WritingList from "@/components/Writing.astro";
 import Layout from "@/layouts/Layout.astro";
+
+const baseUrl = Astro.site || new URL(Astro.url.origin);
+const homePageUrl = new URL("/", baseUrl).href;
+const writingPageUrl = new URL("/writing", baseUrl).href;
+
+const writingCollectionSchema = {
+    "@type": "CollectionPage",
+    name: "Serene Ink Writing",
+    description: "All writing posts from Serene Ink.",
+    url: writingPageUrl,
+};
+
+const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: homePageUrl,
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: "Writing",
+            item: writingPageUrl,
+        },
+    ],
+};
 ---
 
-<Layout title="Writing | Serene Ink" image="/images/home.webp">
+<Layout
+    title="Writing | Serene Ink"
+    description="Browse all posts on Serene Ink."
+    image="/images/home.webp"
+    keywords={["writing", "posts", "backend", "programming", "Serene Ink"]}
+    jsonLd={[writingCollectionSchema, breadcrumbSchema]}
+>
     <WritingList />
 </Layout>

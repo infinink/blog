@@ -59,7 +59,76 @@ const dateFormatted = dateObj.toLocaleDateString("en-US", {
 
 const isoDate = dateObj.toISOString();
 
+const updatedIsoDate = post.data.updatedDate
+    ? (() => {
+          const updatedDateParts = post.data.updatedDate.split("/");
+          return new Date(
+              Date.UTC(
+                  Number(updatedDateParts[2]),
+                  Number(updatedDateParts[0]) - 1,
+                  Number(updatedDateParts[1]),
+              ),
+          ).toISOString();
+      })()
+    : isoDate;
+
 const ogImage = post.data.image?.src;
+const absolutePageUrl = Astro.site
+    ? new URL(Astro.url.pathname, Astro.site).href
+    : Astro.url.href;
+const absoluteOgImage = ogImage
+    ? new URL(ogImage, Astro.site || Astro.url.origin).href
+    : undefined;
+
+const articleSchema = {
+    "@type": "BlogPosting",
+    headline: post.data.title,
+    description: post.data.frontmatter,
+    image: absoluteOgImage ? [absoluteOgImage] : undefined,
+    datePublished: isoDate,
+    dateModified: updatedIsoDate,
+    inLanguage: "en-US",
+    keywords: post.data.tags,
+    articleSection: post.data.tags[0],
+    author: {
+        "@type": "Person",
+        name: "infinInk",
+    },
+    publisher: {
+        "@type": "Organization",
+        name: "Serene Ink",
+    },
+    mainEntityOfPage: absolutePageUrl,
+    url: absolutePageUrl,
+};
+
+const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: Astro.site
+                ? new URL("/", Astro.site).href
+                : new URL("/", Astro.url.origin).href,
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: "Writing",
+            item: Astro.site
+                ? new URL("/writing", Astro.site).href
+                : new URL("/writing", Astro.url.origin).href,
+        },
+        {
+            "@type": "ListItem",
+            position: 3,
+            name: post.data.title,
+            item: absolutePageUrl,
+        },
+    ],
+};
 ---
 
 <Layout
@@ -67,6 +136,15 @@ const ogImage = post.data.image?.src;
     description={post.data.frontmatter}
     type="article"
     image={ogImage}
+    canonical={post.data.canonical}
+    noindex={post.data.noindex}
+    keywords={post.data.tags}
+    publishedTime={isoDate}
+    modifiedTime={updatedIsoDate}
+    author="infinInk"
+    section={post.data.tags[0]}
+    tags={post.data.tags}
+    jsonLd={[articleSchema, breadcrumbSchema]}
 >
     <div class="fixed top-0 left-0 w-full z-50 bg-transparent">
         <div
@@ -188,28 +266,6 @@ const ogImage = post.data.image?.src;
     />
 
     {headings.length > 0 && <MobileTOC headings={headings} />}
-    <script
-        is:inline
-        type="application/ld+json"
-        set:html={JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: post.data.title,
-            image: ogImage
-                ? new URL(ogImage, Astro.site || Astro.url.origin).href
-                : undefined,
-            author: {
-                "@type": "Person",
-                name: "infinInk",
-            },
-            datePublished: isoDate,
-            description: post.data.frontmatter,
-            url: Astro.site
-                ? new URL(Astro.url.pathname, Astro.site).href
-                : Astro.url.href,
-        })}
-    />
-
     <script is:inline>
         let onScroll = null;
         let observer = null;

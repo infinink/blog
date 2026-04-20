@@ -7,9 +7,12 @@ const post = defineCollection({
   schema: ({ image }) => z.object({
     title: z.string(),
     date: z.string(),
+    updatedDate: z.string().optional(),
     frontmatter: z.string(),
     tags: z.array(z.string()),
     pinned: z.boolean().default(false),
+    canonical: z.string().url().optional(),
+    noindex: z.boolean().default(false),
     image: image().optional(),
   }),
 });

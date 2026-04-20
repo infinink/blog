@@ -23,12 +23,48 @@ const thisYear = new Date().getFullYear();
 const publishedThisYear = posts.filter(
     (post) => Number(post.date.split("/")[2]) === thisYear,
 ).length;
+
+const baseUrl = Astro.site || new URL(Astro.url.origin);
+const homePageUrl = new URL("/", baseUrl).href;
+
+const homepageSchema = {
+    "@type": "CollectionPage",
+    name: "Serene Ink Home",
+    description:
+        "A quiet corner on systems, craft, and the details that make software age well.",
+    url: homePageUrl,
+};
+
+const latestItemListSchema = {
+    "@type": "ItemList",
+    name: "Latest Posts",
+    itemListElement: posts.slice(0, 10).map((post, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: new URL(`/posts/${post.slug}`, baseUrl).href,
+        name: post.title,
+    })),
+};
+
+const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: homePageUrl,
+        },
+    ],
+};
 ---
 
 <Layout
     title="Home | Serene Ink"
     description="A quiet corner on systems, craft, and the details that make software age well."
     image="/images/home.webp"
+    keywords={["software engineering", "backend", "programming blog", "astro", "Serene Ink"]}
+    jsonLd={[homepageSchema, latestItemListSchema, breadcrumbSchema]}
 >
     <main class="page flex flex-col gap-12 pb-16">
         <section class="space-y-5 max-w-3xl">

@@ -40,9 +40,12 @@ const formattedDate = `${month}/${day}/${year}`;
 const content = `---
 title: "${title}"
 date: "${formattedDate}"
+# updatedDate: "${formattedDate}"
 frontmatter: "Write a short summary here..."
 tags: ["general"]
 pinned: false
+# canonical: "https://infinink.com/posts/${slug}"
+# noindex: false
 image: ""
 ---
 

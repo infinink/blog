@@ -1,8 +1,47 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Author from "@/components/Author.astro";
+
+const baseUrl = Astro.site || new URL(Astro.url.origin);
+const aboutPageUrl = new URL("/about", baseUrl).href;
+const homePageUrl = new URL("/", baseUrl).href;
+
+const personSchema = {
+    "@type": "Person",
+    name: "infinInk",
+    url: aboutPageUrl,
+    sameAs: [
+        "https://github.com/infininkk",
+    ],
+    jobTitle: "Backend Developer",
+    description:
+        "Backend developer focused on readable systems, software design, and practical engineering.",
+};
+
+const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: homePageUrl,
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: "About",
+            item: aboutPageUrl,
+        },
+    ],
+};
 ---
 
-<Layout title="About | Serene Ink">
+<Layout
+    title="About | Serene Ink"
+    description="About the author behind Serene Ink, including journey, projects, and current interests."
+    keywords={["about", "author", "backend developer", "software design", "Serene Ink"]}
+    jsonLd={[personSchema, breadcrumbSchema]}
+>
     <Author />
 </Layout>
