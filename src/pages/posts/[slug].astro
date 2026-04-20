@@ -6,6 +6,7 @@ import MobileTOC from "@/components/posts/MobileTOC.astro";
 import DesktopTOC from "@/components/posts/DesktopTOC.astro";
 import { Image } from "astro:assets";
 import { slugifyTag } from "@/utils/tags";
+import { comparePostsByPinnedAndDate } from "@/utils/posts";
 
 export async function getStaticPaths() {
     const posts = await getCollection("post");
@@ -17,6 +18,25 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
+
+const allPosts = await getCollection("post");
+const orderedPosts = [...allPosts].sort((a, b) =>
+    comparePostsByPinnedAndDate(a.data, b.data),
+);
+
+const currentIndex = orderedPosts.findIndex((entry) => entry.id === post.id);
+const prevPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] : undefined;
+const nextPost =
+    currentIndex >= 0 && currentIndex < orderedPosts.length - 1
+        ? orderedPosts[currentIndex + 1]
+        : undefined;
+
+const buildDefaultPostHref = (slug: string) => `/posts/${slug}?from=writing`;
+const navigationData = orderedPosts.map((entry) => ({
+    slug: entry.id,
+    title: entry.data.title,
+    tags: entry.data.tags.map((tag) => slugifyTag(tag)),
+}));
 
 const readTime = Math.max(1, Math.ceil(post.body!.split(/\s+/).length / 200));
 
@@ -60,9 +80,9 @@ const ogImage = post.data.image?.src;
         <div class="mb-10 w-full">
             <a
                 href="/writing"
-                class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+                class="post-back-link text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
             >
-                <span>←</span> Back to writing
+                <span>←</span> <span class="post-back-text">Back to writing</span>
             </a>
         </div>
 
@@ -116,14 +136,56 @@ const ogImage = post.data.image?.src;
         </div>
 
         <div class="mt-20 pt-10 border-t border-border flex justify-start">
-            <a
-                href="/writing"
-                class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-            >
-                <span>←</span> Back to writing
-            </a>
+            <div class="w-full space-y-8">
+                <section id="post-nav-section" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a
+                        id="post-prev-link"
+                        href={prevPost ? buildDefaultPostHref(prevPost.id) : "#"}
+                        class:list={{
+                            "border border-border rounded-lg p-4 bg-card/30 hover:bg-muted/70 transition-colors": true,
+                            hidden: !prevPost,
+                        }}
+                    >
+                        <p class="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                            Previous
+                        </p>
+                        <p id="post-prev-title" class="text-lg leading-snug hover:text-primary transition-colors">
+                            {prevPost?.data.title}
+                        </p>
+                    </a>
+
+                    <a
+                        id="post-next-link"
+                        href={nextPost ? buildDefaultPostHref(nextPost.id) : "#"}
+                        class:list={{
+                            "border border-border rounded-lg p-4 bg-card/30 hover:bg-muted/70 transition-colors text-left md:text-right md:col-start-2": true,
+                            hidden: !nextPost,
+                        }}
+                    >
+                        <p class="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                            Next
+                        </p>
+                        <p id="post-next-title" class="text-lg leading-snug hover:text-primary transition-colors">
+                            {nextPost?.data.title}
+                        </p>
+                    </a>
+                </section>
+
+                <a
+                    href="/writing"
+                    class="post-back-link text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+                >
+                    <span>←</span> <span class="post-back-text">Back to writing</span>
+                </a>
+            </div>
         </div>
     </main>
+
+    <script
+        id="post-navigation-data"
+        type="application/json"
+        set:html={JSON.stringify({ currentSlug: post.id, posts: navigationData })}
+    />
 
     {headings.length > 0 && <MobileTOC headings={headings} />}
     <script
@@ -168,6 +230,90 @@ const ogImage = post.data.image?.src;
         );
 
         document.addEventListener("astro:page-load", () => {
+            const applyContextNavigation = () => {
+                const navDataScript = document.getElementById(
+                    "post-navigation-data",
+                );
+                if (!navDataScript?.textContent) return;
+
+                const payload = JSON.parse(navDataScript.textContent);
+                if (!payload?.currentSlug || !Array.isArray(payload.posts))
+                    return;
+
+                const params = new URLSearchParams(window.location.search);
+                const from = params.get("from");
+                const tag = params.get("tag");
+
+                let posts = payload.posts;
+                let contextQuery = "?from=writing";
+                let backHref = "/writing";
+                let backText = "Back to writing";
+
+                if (from === "tag" && tag) {
+                    posts = posts.filter((p) => p.tags.includes(tag));
+                    contextQuery = `?from=tag&tag=${encodeURIComponent(tag)}`;
+                    backHref = `/tags/${tag}`;
+                    backText = `Back to #${tag}`;
+                }
+
+                const index = posts.findIndex(
+                    (entry) => entry.slug === payload.currentSlug,
+                );
+
+                const prev = index > 0 ? posts[index - 1] : null;
+                const next =
+                    index >= 0 && index < posts.length - 1
+                        ? posts[index + 1]
+                        : null;
+
+                document.querySelectorAll(".post-back-link").forEach((el) => {
+                    if (!(el instanceof HTMLAnchorElement)) return;
+                    const link = el;
+                    link.href = backHref;
+                    const label = link.querySelector(".post-back-text");
+                    if (label) label.textContent = backText;
+                });
+
+                const prevLink = document.getElementById("post-prev-link");
+                const prevTitle = document.getElementById("post-prev-title");
+
+                if (
+                    prevLink instanceof HTMLAnchorElement &&
+                    prevTitle instanceof HTMLElement
+                ) {
+                    if (prev) {
+                        prevLink.href = `/posts/${prev.slug}${contextQuery}`;
+                        prevTitle.textContent = prev.title;
+                        prevLink.classList.remove("hidden");
+                    } else {
+                        prevLink.classList.add("hidden");
+                    }
+                }
+
+                const nextLink = document.getElementById("post-next-link");
+                const nextTitle = document.getElementById("post-next-title");
+
+                if (
+                    nextLink instanceof HTMLAnchorElement &&
+                    nextTitle instanceof HTMLElement
+                ) {
+                    if (next) {
+                        nextLink.href = `/posts/${next.slug}${contextQuery}`;
+                        nextTitle.textContent = next.title;
+                        nextLink.classList.remove("hidden");
+                    } else {
+                        nextLink.classList.add("hidden");
+                    }
+                }
+
+                const navSection = document.getElementById("post-nav-section");
+                if (navSection) {
+                    navSection.classList.toggle("hidden", !prev && !next);
+                }
+            };
+
+            applyContextNavigation();
+
             onScroll = () => {
                 const winScroll =
                     document.body.scrollTop ||

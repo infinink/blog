@@ -62,7 +62,7 @@ const grouped = timelinePosts.reduce(
                         return (
                             <section class="flex flex-col gap-2 group hover:bg-muted px-3 py-8 rounded-md transition-all duration-300 border border-border/50 bg-card/20">
                                 <div class="flex flex-col md:flex-row gap-2 md:justify-between md:items-start">
-                                    <a href={`/posts/${post.slug}`}>
+                                    <a href={`/posts/${post.slug}?from=writing`}>
                                         <h2 class="text-2xl group-hover:text-primary leading-tight">
                                             {post.title}
                                         </h2>
@@ -109,7 +109,7 @@ const grouped = timelinePosts.reduce(
                                             return (
                                                 <section class="flex flex-col gap-2 group hover:bg-muted px-3 py-8 rounded-md transition-all duration-300">
                                                     <div class="flex flex-col md:flex-row gap-2 md:justify-between md:items-start">
-                                                        <a href={`/posts/${post.slug}`}>
+                                                        <a href={`/posts/${post.slug}?from=writing`}>
                                                             <h2 class="text-2xl group-hover:text-primary leading-tight">
                                                                 {post.title}
                                                             </h2>

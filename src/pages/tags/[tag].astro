@@ -45,6 +45,8 @@ const posts = entries
 
 const pinnedPosts = posts.filter((post) => post.pinned);
 const regularPosts = posts.filter((post) => !post.pinned);
+const postHrefForCurrentTag = (slug: string) =>
+    `/posts/${slug}?from=tag&tag=${Astro.params.tag}`;
 ---
 
 <Layout
@@ -78,7 +80,7 @@ const regularPosts = posts.filter((post) => !post.pinned);
                                         <span>{post.date}</span>
                                         <span>{post.readTime} min read</span>
                                     </div>
-                                    <a href={`/posts/${post.slug}`}>
+                                    <a href={postHrefForCurrentTag(post.slug)}>
                                         <h2 class="text-2xl leading-tight hover:text-primary transition-colors">
                                             {post.title}
                                         </h2>
@@ -112,7 +114,7 @@ const regularPosts = posts.filter((post) => !post.pinned);
                                     <span>{post.date}</span>
                                     <span>{post.readTime} min read</span>
                                 </div>
-                                <a href={`/posts/${post.slug}`}>
+                                <a href={postHrefForCurrentTag(post.slug)}>
                                     <h2 class="text-2xl leading-tight hover:text-primary transition-colors">
                                         {post.title}
                                     </h2>
