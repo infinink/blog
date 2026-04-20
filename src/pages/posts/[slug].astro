@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge.astro";
 import MobileTOC from "@/components/posts/MobileTOC.astro";
 import DesktopTOC from "@/components/posts/DesktopTOC.astro";
 import { Image } from "astro:assets";
+import { slugifyTag } from "@/utils/tags";
 
 export async function getStaticPaths() {
     const posts = await getCollection("post");
@@ -82,7 +83,10 @@ const ogImage = post.data.image?.src;
                     <div class="flex gap-2 flex-wrap">
                         {
                             post.data.tags.map((tag: string) => (
-                                <Badge content={tag} />
+                                <Badge
+                                    content={tag}
+                                    href={`/tags/${slugifyTag(tag)}`}
+                                />
                             ))
                         }
                     </div>

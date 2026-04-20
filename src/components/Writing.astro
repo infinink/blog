@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Badge from "./ui/Badge.astro";
+import { slugifyTag } from "@/utils/tags";
 
 const entries = await getCollection("post");
 const posts = entries
@@ -81,7 +82,10 @@ const grouped = posts.reduce(
                                             <section class="flex gap-2 flex-wrap">
                                                 {post.tags.map((tag) => {
                                                     return (
-                                                        <Badge content={tag} />
+                                                        <Badge
+                                                            content={tag}
+                                                            href={`/tags/${slugifyTag(tag)}`}
+                                                        />
                                                     );
                                                 })}
                                             </section>

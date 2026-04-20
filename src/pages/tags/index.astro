@@ -1,0 +1,68 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import { normalizeTag, slugifyTag } from "@/utils/tags";
+
+const entries = await getCollection("post");
+
+const tagMap = new Map<string, { label: string; count: number; slug: string }>();
+
+for (const entry of entries) {
+    for (const tag of entry.data.tags) {
+        const key = normalizeTag(tag);
+        const existing = tagMap.get(key);
+        if (existing) {
+            existing.count += 1;
+            continue;
+        }
+
+        tagMap.set(key, {
+            label: tag,
+            count: 1,
+            slug: slugifyTag(tag),
+        });
+    }
+}
+
+const tags = Array.from(tagMap.values()).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.label.localeCompare(b.label);
+});
+---
+
+<Layout
+    title="Tags | Serene Ink"
+    description="Browse all writing tags and explore posts by topic."
+>
+    <main class="page pb-16 space-y-8">
+        <section class="space-y-3 max-w-3xl">
+            <span class="uppercase text-primary font-medium tracking-widest text-xs"
+                >explore</span
+            >
+            <h1 class="text-4xl md:text-5xl leading-tight">Tags</h1>
+            <p class="text-lg text-muted-foreground">
+                Browse notes by topic and jump into what you care about most.
+            </p>
+        </section>
+
+        {
+            tags.length > 0 ? (
+                <section class="flex flex-wrap gap-3">
+                    {tags.map((tag) => (
+                        <a
+                            href={`/tags/${tag.slug}`}
+                            class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-4 py-2 text-sm hover:bg-muted transition-colors"
+                        >
+                            <span class="text-foreground">#{tag.label}</span>
+                            <span class="text-muted-foreground">({tag.count})</span>
+                        </a>
+                    ))}
+                </section>
+            ) : (
+                <section class="border border-dashed border-border rounded-lg p-8 text-muted-foreground">
+                    No tags yet. Add tags in post frontmatter to see them here.
+                </section>
+            )
+        }
+    </main>
+</Layout>
