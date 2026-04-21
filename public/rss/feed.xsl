@@ -921,7 +921,7 @@
           <footer>
             <div class="flex flex-col justify-between space-y-4 md:flex-row md:space-y-0">
               <div class="space-y-4">
-                <a class="flex text-2xl font-bold" href="/" title="Serene Ink">
+                <a class="flex text-2xl font-bold" href="/" title="infinInk">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
                     <path d="M4 19a1 1 0 1 0 2 0 1 1 0 1 0-2 0"/>
                     <path d="M4 4a16 16 0 0 1 16 16"/>
@@ -949,8 +949,8 @@
                   Made By
                   <div class="flex items-start justify-center gap-2 text-center font-semibold sm:gap-1">
                     <div class="block">
-                      <a href="/" target="_blank" title="Serene Ink" class="block pb-2">
-                        Serene Ink
+                      <a href="/" target="_blank" title="infinInk" class="block pb-2">
+                        infinInk
                       </a>
                     </div>
                   </div>

@@ -35,7 +35,7 @@ const tagsPageUrl = new URL("/tags", baseUrl).href;
 
 const tagsCollectionSchema = {
     "@type": "CollectionPage",
-    name: "Serene Ink Tags",
+    name: "infinInk Tags",
     description: "Browse all writing tags and explore posts by topic.",
     url: tagsPageUrl,
 };
@@ -71,9 +71,9 @@ const breadcrumbSchema = {
 ---
 
 <Layout
-    title="Tags | Serene Ink"
+    title="Tags | infinInk"
     description="Browse all writing tags and explore posts by topic."
-    keywords={["tags", "topics", "programming", "software design", "Serene Ink"]}
+    keywords={["tags", "topics", "programming", "software design", "infinInk"]}
     jsonLd={[tagsCollectionSchema, tagsItemListSchema, breadcrumbSchema]}
 >
     <main class="page pb-16 space-y-8">

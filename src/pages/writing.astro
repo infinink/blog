@@ -8,8 +8,8 @@ const writingPageUrl = new URL("/writing", baseUrl).href;
 
 const writingCollectionSchema = {
     "@type": "CollectionPage",
-    name: "Serene Ink Writing",
-    description: "All writing posts from Serene Ink.",
+    name: "infinInk Writing",
+    description: "All writing posts from infinInk.",
     url: writingPageUrl,
 };
 
@@ -33,10 +33,10 @@ const breadcrumbSchema = {
 ---
 
 <Layout
-    title="Writing | Serene Ink"
-    description="Browse all posts on Serene Ink."
+    title="Writing | infinInk"
+    description="Browse all posts on infinInk."
     image="/images/home.webp"
-    keywords={["writing", "posts", "backend", "programming", "Serene Ink"]}
+    keywords={["writing", "posts", "backend", "programming", "infinInk"]}
     jsonLd={[writingCollectionSchema, breadcrumbSchema]}
 >
     <WritingList />
