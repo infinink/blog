@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { Moon, Sun, Braces, Search, Rss } from "@lucide/astro";
+import { Moon, Sun, Braces, Search, Rss, Accessibility, X } from "@lucide/astro";
 import { ClientRouter } from "astro:transitions";
 
 interface Props {
@@ -148,8 +148,29 @@ const isOnCurrentPath = (path: string) => {
                     document.documentElement.classList.add("dark");
                 }
             };
+
+            const setAccessibilityMode = () => {
+                const accessibility = (() => {
+                    if (
+                        typeof localStorage !== "undefined" &&
+                        localStorage.getItem("accessibility-mode")
+                    ) {
+                        return localStorage.getItem("accessibility-mode");
+                    }
+                    return "off";
+                })();
+
+                if (accessibility === "on") {
+                    document.documentElement.classList.add("a11y-mode");
+                } else {
+                    document.documentElement.classList.remove("a11y-mode");
+                }
+            };
+
             setDarkMode();
+            setAccessibilityMode();
             document.addEventListener("astro:after-swap", setDarkMode);
+            document.addEventListener("astro:after-swap", setAccessibilityMode);
         </script>
     </head>
     <body class="max-w-page mx-auto min-h-screen flex flex-col">
@@ -209,6 +230,26 @@ const isOnCurrentPath = (path: string) => {
                             >About</span
                         ></a
                     >
+                </li>
+                <li>
+                    <button
+                        id="accessibility-toggle"
+                        type="button"
+                        aria-label="Toggle accessibility mode"
+                        aria-pressed="false"
+                        class="flex items-center"
+                    >
+                        <Accessibility
+                            class="a11y-icon-off block"
+                            size={16}
+                            aria-hidden="true"
+                        />
+                        <X
+                            class="a11y-icon-on hidden"
+                            size={16}
+                            aria-hidden="true"
+                        />
+                    </button>
                 </li>
                 <li>
                     <button
@@ -350,6 +391,7 @@ const isOnCurrentPath = (path: string) => {
         <script>
             import type { SearchItem } from "../types";
 
+            let onAccessibilityToggleClick: (() => void) | null = null;
             let onThemeToggleClick: ((e: MouseEvent) => void) | null = null;
             let onSearchToggleClick: ((e: MouseEvent) => void) | null = null;
             let onSearchCloseClick: ((e: MouseEvent) => void) | null = null;
@@ -359,7 +401,44 @@ const isOnCurrentPath = (path: string) => {
             let onSearchInputRaw: ((e: Event) => void) | null = null;
             let searchData: SearchItem[] | null = null;
 
+            const syncAccessibilityButtonState = () => {
+                const toggle = document.getElementById("accessibility-toggle");
+                if (!(toggle instanceof HTMLButtonElement)) return;
+
+                const iconOff = toggle.querySelector(".a11y-icon-off");
+                const iconOn = toggle.querySelector(".a11y-icon-on");
+
+                const isEnabled =
+                    document.documentElement.classList.contains("a11y-mode");
+                toggle.setAttribute("aria-pressed", isEnabled ? "true" : "false");
+                toggle.setAttribute(
+                    "aria-label",
+                    isEnabled
+                        ? "Disable accessibility mode"
+                        : "Enable accessibility mode",
+                );
+
+                if (iconOff) {
+                    iconOff.classList.toggle("hidden", isEnabled);
+                    iconOff.classList.toggle("block", !isEnabled);
+                }
+                if (iconOn) {
+                    iconOn.classList.toggle("hidden", !isEnabled);
+                    iconOn.classList.toggle("block", isEnabled);
+                }
+            };
+
             document.addEventListener("astro:before-swap", () => {
+                const accessibilityToggle =
+                    document.getElementById("accessibility-toggle");
+                if (onAccessibilityToggleClick && accessibilityToggle) {
+                    accessibilityToggle.removeEventListener(
+                        "click",
+                        onAccessibilityToggleClick,
+                    );
+                    onAccessibilityToggleClick = null;
+                }
+
                 const themeToggle = document.getElementById("theme-toggle");
                 if (onThemeToggleClick && themeToggle) {
                     themeToggle.removeEventListener(
@@ -409,8 +488,45 @@ const isOnCurrentPath = (path: string) => {
             });
 
             document.addEventListener("astro:page-load", () => {
+                const accessibilityToggle =
+                    document.getElementById("accessibility-toggle");
+                if (accessibilityToggle) {
+                    syncAccessibilityButtonState();
+
+                    onAccessibilityToggleClick = () => {
+                        const isEnabled =
+                            document.documentElement.classList.contains(
+                                "a11y-mode",
+                            );
+
+                        if (isEnabled) {
+                            document.documentElement.classList.remove(
+                                "a11y-mode",
+                            );
+                            localStorage.setItem("accessibility-mode", "off");
+                        } else {
+                            document.documentElement.classList.add("a11y-mode");
+                            localStorage.setItem("accessibility-mode", "on");
+                        }
+
+                        syncAccessibilityButtonState();
+                    };
+
+                    accessibilityToggle.addEventListener(
+                        "click",
+                        onAccessibilityToggleClick,
+                    );
+                }
+
                 const themeToggle = document.getElementById("theme-toggle");
-                if (!themeToggle) return;
+                if (themeToggle) {
+                    const isDark =
+                        document.documentElement.classList.contains("dark");
+                    themeToggle.setAttribute(
+                        "aria-pressed",
+                        isDark ? "true" : "false",
+                    );
+                }
 
                 onThemeToggleClick = (event: MouseEvent) => {
                     const isDark =
@@ -420,13 +536,18 @@ const isOnCurrentPath = (path: string) => {
                         if (isDark) {
                             document.documentElement.classList.remove("dark");
                             localStorage.setItem("theme", "light");
+                            themeToggle?.setAttribute("aria-pressed", "false");
                         } else {
                             document.documentElement.classList.add("dark");
                             localStorage.setItem("theme", "dark");
+                            themeToggle?.setAttribute("aria-pressed", "true");
                         }
                     };
 
-                    if (!document.startViewTransition) {
+                    const isAccessibilityMode =
+                        document.documentElement.classList.contains("a11y-mode");
+
+                    if (!document.startViewTransition || isAccessibilityMode) {
                         toggleTheme();
                         return;
                     }
@@ -474,7 +595,9 @@ const isOnCurrentPath = (path: string) => {
                     });
                 };
 
-                themeToggle.addEventListener("click", onThemeToggleClick);
+                if (themeToggle) {
+                    themeToggle.addEventListener("click", onThemeToggleClick);
+                }
 
                 const searchToggle = document.getElementById("search-toggle");
                 const searchClose = document.getElementById("search-close");

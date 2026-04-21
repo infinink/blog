@@ -126,6 +126,35 @@
     z-index: 2;
 }
 
+html.a11y-mode {
+    scroll-behavior: auto;
+}
+
+html.a11y-mode #cursor {
+    opacity: 0 !important;
+}
+
+html.a11y-mode,
+html.a11y-mode button,
+html.a11y-mode a {
+    cursor: auto !important;
+}
+
+html.a11y-mode :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: 0.25rem;
+}
+
+html.a11y-mode *,
+html.a11y-mode *::before,
+html.a11y-mode *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+}
+
 @layer base {
     * {
         @apply border-border;
