@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { Moon, Sun, Braces, Search, Rss, Accessibility, X, Menu } from "@lucide/astro";
+import { Moon, Sun, Braces, Search, Accessibility, X, Menu } from "@lucide/astro";
 import { ClientRouter } from "astro:transitions";
 
 interface Props {
@@ -229,9 +229,6 @@ const isOnCurrentPath = (path: string) => {
                         <Moon class="block dark:hidden" size={16} />
                         <Sun class="hidden dark:block" size={16} />
                     </button>
-                    <a href="/feed.xml" aria-label="RSS feed" class="flex items-center">
-                        <Rss size={16} />
-                    </a>
                     <button
                         id="search-toggle"
                         type="button"
