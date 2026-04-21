@@ -12,7 +12,13 @@ interface Props {
 const { title, description, url, techStack } = Astro.props;
 ---
 
-<section class="w-full bg-secondary/30 border space-y-4 p-5">
+<a
+    href={url}
+    target="_blank"
+    rel="noreferrer"
+    aria-label={`View project: ${title}`}
+    class="block w-full bg-secondary/30 border space-y-4 p-5 hover:bg-muted/70 transition-colors"
+>
     <section class="flex justify-between gap-4">
         <div>
             <span class="font-bold">{title}</span>
@@ -20,17 +26,11 @@ const { title, description, url, techStack } = Astro.props;
                 {description}
             </p>
         </div>
-        <a
-            href={url}
-            target="_blank"
-            class="text-muted-foreground"
-            rel="noreferrer"
-            aria-label={`View project: ${title}`}
-        >
+        <span class="text-muted-foreground" aria-hidden="true">
             <ExternalLink size={20} />
-        </a>
+        </span>
     </section>
     <section class="flex flex-wrap gap-2">
         {techStack.map((tech) => <Badge content={tech} />)}
     </section>
-</section>
+</a>

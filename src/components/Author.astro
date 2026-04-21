@@ -14,6 +14,7 @@ import ActivityCard from "./about/ActivityCard.astro";
 import DecorativeKanji from "./about/DecorativeKanji.astro";
 import ProjectCard from "./ProjectCard.astro";
 import Timeline from "./about/Timeline.astro";
+import { projects } from "@/data/projects";
 
 import mhrImage from "../assets/images/mhr.webp";
 import frierenImage from "../assets/images/frieren.webp";
@@ -71,22 +72,6 @@ const timeline = [
     },
 ];
 
-const projects = [
-    {
-        title: "PCSO Lotto API",
-        description:
-            "A Node.js REST API that provides real-time PCSO lotto results via web scraping, with Redis-based caching and locking to ensure data freshness and prevent duplicate requests.",
-        link: "https://github.com/infininkk/pcso-lotto-api",
-        techStack: ["Node.js", "Cheerio", "Redis"],
-    },
-    {
-        title: "U Do Note",
-        description:
-            "Flutter note-taking app integrating Spaced Repetition, Leitner, Feynman techniques, and etc with OCR via Google ML Kit and AI summarization using OpenAI.",
-        link: "https://github.com/infininkk/u-do-note",
-        techStack: ["Flutter", "Firebase", "OpenAI"],
-    },
-];
 ---
 
 <main class="page flex flex-col space-y-10">
