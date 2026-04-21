@@ -135,9 +135,16 @@ html.a11y-mode #cursor {
 }
 
 html.a11y-mode,
+html.a11y-mode body {
+    cursor: default !important;
+}
+
+html.a11y-mode a,
 html.a11y-mode button,
-html.a11y-mode a {
-    cursor: auto !important;
+html.a11y-mode [role="button"],
+html.a11y-mode label,
+html.a11y-mode summary {
+    cursor: pointer !important;
 }
 
 html.a11y-mode :focus-visible {
