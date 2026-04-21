@@ -323,7 +323,7 @@ const isOnCurrentPath = (path: string) => {
                 </div>
                 <div
                     id="search-results"
-                    class="overflow-y-auto p-2 flex flex-col gap-1 hidden"
+                    class="overflow-y-auto p-3 sm:p-4 flex flex-col gap-2 hidden"
                 >
                 </div>
                 <div
@@ -334,9 +334,9 @@ const isOnCurrentPath = (path: string) => {
                 </div>
                 <div
                     id="search-initial"
-                    class="py-10 text-center text-sm text-muted-foreground"
+                    class="px-3 sm:px-4 py-6 sm:py-7 text-sm text-muted-foreground"
                 >
-                    Type to start searching.
+                    <p class="text-center">Loading recommendations...</p>
                 </div>
             </div>
         </div>
@@ -354,6 +354,7 @@ const isOnCurrentPath = (path: string) => {
             let onSearchToggleClick: ((e: MouseEvent) => void) | null = null;
             let onSearchCloseClick: ((e: MouseEvent) => void) | null = null;
             let onSearchOverlayClick: ((e: MouseEvent) => void) | null = null;
+            let onSearchInitialClick: ((e: MouseEvent) => void) | null = null;
             let onSearchKeydown: ((e: KeyboardEvent) => void) | null = null;
             let onSearchInputRaw: ((e: Event) => void) | null = null;
             let searchData: SearchItem[] | null = null;
@@ -372,6 +373,7 @@ const isOnCurrentPath = (path: string) => {
                 const searchClose = document.getElementById("search-close");
                 const searchOverlay = document.getElementById("search-overlay");
                 const searchInput = document.getElementById("search-input");
+                const searchInitial = document.getElementById("search-initial");
 
                 if (onSearchToggleClick && searchToggle)
                     searchToggle.removeEventListener(
@@ -390,12 +392,18 @@ const isOnCurrentPath = (path: string) => {
                     );
                 if (onSearchInputRaw && searchInput)
                     searchInput.removeEventListener("input", onSearchInputRaw);
+                if (onSearchInitialClick && searchInitial)
+                    searchInitial.removeEventListener(
+                        "click",
+                        onSearchInitialClick,
+                    );
                 if (onSearchKeydown)
                     document.removeEventListener("keydown", onSearchKeydown);
 
                 onSearchToggleClick = null;
                 onSearchCloseClick = null;
                 onSearchOverlayClick = null;
+                onSearchInitialClick = null;
                 onSearchInputRaw = null;
                 onSearchKeydown = null;
             });
@@ -480,6 +488,61 @@ const isOnCurrentPath = (path: string) => {
                 const emptyState = document.getElementById("search-empty");
                 const initialState = document.getElementById("search-initial");
 
+                const renderInitialRecommendations = () => {
+                    if (!initialState) return;
+
+                    if (!searchData || searchData.length === 0) {
+                        initialState.innerHTML =
+                            '<p class="text-center">Type to start searching.</p>';
+                        return;
+                    }
+
+                    const recommended = searchData.slice(0, 5);
+                    const tagFrequency = new Map<string, number>();
+                    searchData.forEach((post: SearchItem) => {
+                        post.tags.forEach((tag: string) => {
+                            tagFrequency.set(tag, (tagFrequency.get(tag) ?? 0) + 1);
+                        });
+                    });
+                    const recommendedTags = Array.from(tagFrequency.entries())
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 8)
+                        .map(([tag]) => tag);
+
+                    initialState.innerHTML = `
+                        <div>
+                            <p class="mb-3 text-xs font-medium tracking-wide uppercase text-muted-foreground">Recommended</p>
+                            <div class="flex flex-col gap-1">
+                                ${recommended
+                                    .map(
+                                        (post: SearchItem) => `
+                                            <a href="${post.link}" class="flex flex-col gap-1 p-3 rounded-lg hover:bg-secondary transition-colors group">
+                                                <div class="flex justify-between items-center bg-transparent">
+                                                    <span class="text-foreground font-medium group-hover:text-primary transition-colors line-clamp-1">${post.title}</span>
+                                                    <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">${post.date}</span>
+                                                </div>
+                                                <span class="text-sm text-muted-foreground line-clamp-1">${post.frontmatter}</span>
+                                            </a>
+                                        `,
+                                    )
+                                    .join("")}
+                            </div>
+                            <div class="mt-4">
+                                <p class="mb-2 text-xs font-medium tracking-wide uppercase text-muted-foreground">Recommended tags</p>
+                                <div class="flex flex-wrap gap-2">
+                                    ${recommendedTags
+                                        .map(
+                                            (tag) => `
+                                                <button type="button" data-search-tag="${tag}" class="px-2 py-1 rounded-md text-xs bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer">#${tag}</button>
+                                            `,
+                                        )
+                                        .join("")}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                };
+
                 const openSearch = async () => {
                     if (!searchOverlay || !searchModal || !searchInput) return;
                     searchOverlay.removeAttribute("inert");
@@ -502,6 +565,10 @@ const isOnCurrentPath = (path: string) => {
                             console.error("Failed to load search index", e);
                         }
                     }
+
+                    renderInitialRecommendations();
+                    searchInput.value = "";
+                    renderResults("");
                 };
 
                 const closeSearch = () => {
@@ -572,6 +639,19 @@ const isOnCurrentPath = (path: string) => {
                     const target = e.target as HTMLInputElement;
                     renderResults(target.value);
                 };
+                onSearchInitialClick = (e: MouseEvent) => {
+                    if (!searchInput) return;
+                    const target = e.target as Element;
+                    const tagButton = target.closest("[data-search-tag]");
+                    if (!(tagButton instanceof HTMLButtonElement)) return;
+
+                    const tag = tagButton.dataset.searchTag;
+                    if (!tag) return;
+
+                    searchInput.value = tag;
+                    renderResults(tag);
+                    searchInput.focus();
+                };
                 onSearchKeydown = (e: KeyboardEvent) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
                         e.preventDefault();
@@ -592,6 +672,8 @@ const isOnCurrentPath = (path: string) => {
                     );
                 if (searchInput)
                     searchInput.addEventListener("input", onSearchInputRaw);
+                if (initialState)
+                    initialState.addEventListener("click", onSearchInitialClick);
                 document.addEventListener("keydown", onSearchKeydown);
             });
         </script>
