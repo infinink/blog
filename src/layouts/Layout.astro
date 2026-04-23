@@ -146,6 +146,21 @@ const isOnCurrentPath = (path: string) => {
                 return "system";
             };
 
+            const ensureDefaultThemePreference = () => {
+                if (typeof localStorage === "undefined") {
+                    return;
+                }
+
+                const storedTheme = localStorage.getItem(THEME_KEY);
+                if (
+                    storedTheme !== "light" &&
+                    storedTheme !== "dark" &&
+                    storedTheme !== "system"
+                ) {
+                    localStorage.setItem(THEME_KEY, "system");
+                }
+            };
+
             const resolveTheme = (themePreference) => {
                 if (themePreference === "system") {
                     return window.matchMedia(SYSTEM_THEME_MEDIA).matches
@@ -211,6 +226,7 @@ const isOnCurrentPath = (path: string) => {
                 );
             };
 
+            ensureDefaultThemePreference();
             setDarkMode();
             setAccessibilityMode();
             showConsoleEasterEgg();
@@ -552,6 +568,8 @@ const isOnCurrentPath = (path: string) => {
                 ) {
                     return savedTheme;
                 }
+
+                localStorage.setItem("theme", "system");
 
                 return "system";
             };
