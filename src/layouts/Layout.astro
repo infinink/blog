@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { Moon, Sun, Braces, Search, Accessibility, X, Menu } from "@lucide/astro";
+import { Moon, Sun, Laptop, Braces, Search, Accessibility, X, Menu } from "@lucide/astro";
 import { ClientRouter } from "astro:transitions";
 
 interface Props {
@@ -126,27 +126,50 @@ const isOnCurrentPath = (path: string) => {
             ))
         }
         <script is:inline>
+            const THEME_KEY = "theme";
+            const SYSTEM_THEME_MEDIA = "(prefers-color-scheme: dark)";
+
+            const getStoredThemePreference = () => {
+                if (typeof localStorage === "undefined") {
+                    return "system";
+                }
+
+                const storedTheme = localStorage.getItem(THEME_KEY);
+                if (
+                    storedTheme === "light" ||
+                    storedTheme === "dark" ||
+                    storedTheme === "system"
+                ) {
+                    return storedTheme;
+                }
+
+                return "system";
+            };
+
+            const resolveTheme = (themePreference) => {
+                if (themePreference === "system") {
+                    return window.matchMedia(SYSTEM_THEME_MEDIA).matches
+                        ? "dark"
+                        : "light";
+                }
+
+                return themePreference;
+            };
+
             const setDarkMode = () => {
-                const theme = (() => {
-                    if (
-                        typeof localStorage !== "undefined" &&
-                        localStorage.getItem("theme")
-                    ) {
-                        return localStorage.getItem("theme");
-                    }
-                    if (
-                        window.matchMedia("(prefers-color-scheme: dark)")
-                            .matches
-                    ) {
-                        return "dark";
-                    }
-                    return "light";
-                })();
-                if (theme === "light") {
+                const themePreference = getStoredThemePreference();
+                const resolvedTheme = resolveTheme(themePreference);
+
+                if (resolvedTheme === "light") {
                     document.documentElement.classList.remove("dark");
                 } else {
                     document.documentElement.classList.add("dark");
                 }
+
+                document.documentElement.setAttribute(
+                    "data-theme-preference",
+                    themePreference,
+                );
             };
 
             const setAccessibilityMode = () => {
@@ -191,6 +214,12 @@ const isOnCurrentPath = (path: string) => {
             setDarkMode();
             setAccessibilityMode();
             showConsoleEasterEgg();
+            const systemThemeMedia = window.matchMedia(SYSTEM_THEME_MEDIA);
+            systemThemeMedia.addEventListener("change", () => {
+                if (getStoredThemePreference() === "system") {
+                    setDarkMode();
+                }
+            });
             document.addEventListener("astro:after-swap", setDarkMode);
             document.addEventListener("astro:after-swap", setAccessibilityMode);
             document.addEventListener("astro:after-swap", showConsoleEasterEgg);
@@ -223,11 +252,12 @@ const isOnCurrentPath = (path: string) => {
                     <button
                         id="theme-toggle"
                         type="button"
-                        aria-label="Toggle dark mode"
+                        aria-label="Switch to dark mode"
                         class="flex items-center"
                     >
-                        <Moon class="block dark:hidden" size={16} />
-                        <Sun class="hidden dark:block" size={16} />
+                        <Sun class="theme-icon-light block" size={16} aria-hidden="true" />
+                        <Moon class="theme-icon-dark hidden" size={16} aria-hidden="true" />
+                        <Laptop class="theme-icon-system hidden" size={16} aria-hidden="true" />
                     </button>
                     <button
                         id="search-toggle"
@@ -507,7 +537,100 @@ const isOnCurrentPath = (path: string) => {
             let onSearchInputRaw: ((e: Event) => void) | null = null;
             let onMobileMenuToggleClick: (() => void) | null = null;
             let onMobileMenuLinkClick: (() => void) | null = null;
+            let themeMediaQuery: MediaQueryList | null = null;
+            let onSystemThemeChange: ((e: MediaQueryListEvent) => void) | null = null;
             let searchData: SearchItem[] | null = null;
+
+            type ThemePreference = "light" | "dark" | "system";
+
+            const getThemePreference = (): ThemePreference => {
+                const savedTheme = localStorage.getItem("theme");
+                if (
+                    savedTheme === "light" ||
+                    savedTheme === "dark" ||
+                    savedTheme === "system"
+                ) {
+                    return savedTheme;
+                }
+
+                return "system";
+            };
+
+            const resolveThemePreference = (
+                preference: ThemePreference,
+            ): "light" | "dark" => {
+                if (preference === "system") {
+                    return window.matchMedia("(prefers-color-scheme: dark)")
+                        .matches
+                        ? "dark"
+                        : "light";
+                }
+
+                return preference;
+            };
+
+            const applyTheme = (preference: ThemePreference) => {
+                const resolvedTheme = resolveThemePreference(preference);
+
+                document.documentElement.classList.toggle(
+                    "dark",
+                    resolvedTheme === "dark",
+                );
+                document.documentElement.setAttribute(
+                    "data-theme-preference",
+                    preference,
+                );
+                localStorage.setItem("theme", preference);
+
+                return resolvedTheme;
+            };
+
+            const getNextThemePreference = (
+                current: ThemePreference,
+            ): ThemePreference => {
+                if (current === "light") return "dark";
+                if (current === "dark") return "system";
+                return "light";
+            };
+
+            const syncThemeButtonState = () => {
+                const toggle = document.getElementById("theme-toggle");
+                if (!(toggle instanceof HTMLButtonElement)) return;
+
+                const preference = getThemePreference();
+                const resolvedTheme = resolveThemePreference(preference);
+
+                toggle.setAttribute(
+                    "aria-pressed",
+                    resolvedTheme === "dark" ? "true" : "false",
+                );
+
+                const nextPreference = getNextThemePreference(preference);
+                const nextLabel =
+                    nextPreference === "light"
+                        ? "light"
+                        : nextPreference === "dark"
+                          ? "dark"
+                          : "system";
+                toggle.setAttribute("aria-label", `Switch to ${nextLabel} mode`);
+
+                const lightIcon = toggle.querySelector(".theme-icon-light");
+                const darkIcon = toggle.querySelector(".theme-icon-dark");
+                const systemIcon = toggle.querySelector(".theme-icon-system");
+
+                if (lightIcon) {
+                    lightIcon.classList.toggle("hidden", preference !== "light");
+                    lightIcon.classList.toggle("block", preference === "light");
+                }
+                if (darkIcon) {
+                    darkIcon.classList.toggle("hidden", preference !== "dark");
+                    darkIcon.classList.toggle("block", preference === "dark");
+                }
+                if (systemIcon) {
+                    systemIcon.classList.toggle("hidden", preference !== "system");
+                    systemIcon.classList.toggle("block", preference === "system");
+                }
+            };
 
             const syncAccessibilityButtonState = () => {
                 const toggle = document.getElementById("accessibility-toggle");
@@ -597,6 +720,12 @@ const isOnCurrentPath = (path: string) => {
                     });
                 if (onSearchKeydown)
                     document.removeEventListener("keydown", onSearchKeydown);
+                if (themeMediaQuery && onSystemThemeChange) {
+                    themeMediaQuery.removeEventListener(
+                        "change",
+                        onSystemThemeChange,
+                    );
+                }
 
                 onSearchToggleClick = null;
                 onSearchCloseClick = null;
@@ -606,6 +735,8 @@ const isOnCurrentPath = (path: string) => {
                 onSearchKeydown = null;
                 onMobileMenuToggleClick = null;
                 onMobileMenuLinkClick = null;
+                onSystemThemeChange = null;
+                themeMediaQuery = null;
             });
 
             document.addEventListener("astro:page-load", () => {
@@ -641,34 +772,41 @@ const isOnCurrentPath = (path: string) => {
 
                 const themeToggle = document.getElementById("theme-toggle");
                 if (themeToggle) {
-                    const isDark =
-                        document.documentElement.classList.contains("dark");
-                    themeToggle.setAttribute(
-                        "aria-pressed",
-                        isDark ? "true" : "false",
-                    );
+                    syncThemeButtonState();
                 }
 
+                themeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+                onSystemThemeChange = () => {
+                    if (getThemePreference() !== "system") return;
+                    applyTheme("system");
+                    syncThemeButtonState();
+                };
+                themeMediaQuery.addEventListener("change", onSystemThemeChange);
+
                 onThemeToggleClick = (event: MouseEvent) => {
-                    const isDark =
-                        document.documentElement.classList.contains("dark");
+                    const currentPreference = getThemePreference();
+                    const nextPreference =
+                        getNextThemePreference(currentPreference);
+                    const previousResolvedTheme = resolveThemePreference(
+                        currentPreference,
+                    );
+                    const nextResolvedTheme = resolveThemePreference(nextPreference);
 
                     const toggleTheme = () => {
-                        if (isDark) {
-                            document.documentElement.classList.remove("dark");
-                            localStorage.setItem("theme", "light");
-                            themeToggle?.setAttribute("aria-pressed", "false");
-                        } else {
-                            document.documentElement.classList.add("dark");
-                            localStorage.setItem("theme", "dark");
-                            themeToggle?.setAttribute("aria-pressed", "true");
-                        }
+                        applyTheme(nextPreference);
+                        syncThemeButtonState();
                     };
 
                     const isAccessibilityMode =
                         document.documentElement.classList.contains("a11y-mode");
+                    const shouldAnimateThemeTransition =
+                        previousResolvedTheme !== nextResolvedTheme;
 
-                    if (!document.startViewTransition || isAccessibilityMode) {
+                    if (
+                        !document.startViewTransition ||
+                        isAccessibilityMode ||
+                        !shouldAnimateThemeTransition
+                    ) {
                         toggleTheme();
                         return;
                     }
